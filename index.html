@@ -1,0 +1,339 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#172440"><title>あと100歩の世界 — 彩景アップデート</title><style>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:#fff4db;font-family:system-ui,-apple-system,sans-serif;overflow:hidden}#app{height:100dvh;display:flex;flex-direction:column;max-width:850px;margin:auto;background:linear-gradient(#1c2a49,#101827)}header{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;gap:6px;background:#17243de8;border-bottom:2px solid #b58b56;font-weight:800}header small{font-size:11px;color:#c8c3ba}#step{font-size:24px;color:#ffdb86}#world{position:relative;flex:1;min-height:100px;overflow:hidden;background:#253b3a}canvas{width:100%;height:100%;image-rendering:pixelated;display:block}#toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#18243be8;border:1px solid #f4d391;border-radius:9px;padding:8px 13px;min-width:190px;text-align:center;font-size:13px;pointer-events:none;opacity:0;transition:opacity .3s}#toast.on{opacity:1}#bottom{height:165px;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#17243d;border-top:2px solid #a78553;gap:10px}#pad{width:145px;height:145px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:4px}button{touch-action:manipulation;border:2px solid #e4b971;background:linear-gradient(#425e87,#26395a);border-radius:10px;color:#fff6d9;font-weight:800;font-size:16px;box-shadow:0 3px 0 #0b1425}button:active{transform:translateY(2px);box-shadow:none}#pad button{font-size:22px}#pad .up{grid-column:2;grid-row:1}#pad .left{grid-column:1;grid-row:2}#pad .down{grid-column:2;grid-row:3}#pad .right{grid-column:3;grid-row:2}#pad .center{grid-column:2;grid-row:2;background:#293c52;font-size:12px}#actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;flex:1;max-width:330px}#actions button{min-height:60px;font-size:14px}#modal{position:absolute;inset:0;background:#080e1bc9;display:none;align-items:center;justify-content:center;padding:18px;z-index:5}#modal.on{display:flex}#panel{width:min(100%,520px);max-height:84%;overflow-y:auto;background:linear-gradient(145deg,#293d62,#17223b);border:3px solid #e7bc73;box-shadow:0 15px 50px #0009;border-radius:17px;padding:19px;line-height:1.7}#panel h2{margin:0 0 8px;color:#ffe4a2;font-size:21px}#panel p{margin:8px 0}#panel button{display:block;width:100%;padding:12px;margin-top:10px}#panel .muted{color:#bac8dc;font-size:13px}#panel .enemy{font-size:60px;text-align:center;animation:bob 1.3s infinite alternate}#panel .stats{background:#0b152b;border-radius:8px;padding:9px}#panel .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}#panel .grid button{margin:0}#panel .gold{color:#ffe09a}@keyframes bob{to{transform:translateY(-8px)}}@media(max-height:650px){#bottom{height:125px}#pad{height:112px;width:112px}#actions button{min-height:48px}}
+</style><style>@keyframes enemyFloat{0%,100%{transform:translateY(2px)}50%{transform:translateY(-5px)}}</style>
+<style>
+/* Original low-resolution character portraits, drawn with CSS only. */
+.story-portrait{float:right;position:relative;width:84px;height:98px;margin:0 0 10px 12px;border:2px solid #c5a46b;border-radius:8px;background:radial-gradient(circle at 50% 35%,#63799d,#1c2842 75%);image-rendering:pixelated;overflow:hidden;box-shadow:0 3px 10px #0008}
+.story-portrait .portrait-head{position:absolute;top:19px;left:24px;width:37px;height:42px;background:#f3caa5;border-radius:13px 13px 15px 15px;border:3px solid #352b4b;z-index:2}
+.story-portrait .portrait-head:before{content:'';position:absolute;left:-8px;top:-13px;width:46px;height:23px;background:#3466b4;clip-path:polygon(0 25%,30% 0,55% 22%,80% 0,100% 42%,90% 100%,20% 75%)}
+.story-portrait .portrait-head i,.story-portrait .portrait-head b{position:absolute;top:19px;width:6px;height:9px;background:#233d78;border-radius:2px}
+.story-portrait .portrait-head i{left:7px}.story-portrait .portrait-head b{right:6px}
+.story-portrait .portrait-head em{position:absolute;left:15px;top:30px;width:7px;height:3px;border-bottom:2px solid #ab6871;border-radius:50%}
+.story-portrait .portrait-body{position:absolute;bottom:-10px;left:12px;width:62px;height:44px;border:4px solid #273a67;background:#4069b0;clip-path:polygon(25% 0,75% 0,100% 100%,0 100%)}
+.story-portrait.luna .portrait-head:before{background:#ad83df;top:-12px;height:29px}.story-portrait.luna .portrait-body{background:#7654a9;border-color:#e2c3e8}.story-portrait.luna .portrait-head i,.story-portrait.luna .portrait-head b{background:#7954b3}
+.story-portrait.toki .portrait-head{background:#f5e3a2;border-color:#bca66e;border-radius:50%}.story-portrait.toki .portrait-head:before{background:#f6e6a7}.story-portrait.toki .portrait-body{background:#e4c97d;border-color:#9e8b68}
+#panel:after{content:'';display:block;clear:both}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head><body><div id="app"><header><div><small id="chapter">第1章 鐘の鳴らない村</small><div>❤️ <span id="hp">30</span>/30　💎 <span id="shards">0</span>/3</div></div><div style="text-align:right"><small>世界の残り歩数</small><div id="step">100 / 100</div></div></header><div id="world"><canvas id="game"></canvas><div id="toast"></div><div id="modal"><div id="panel"></div></div></div><div id="bottom"><div id="pad"><button class="up" data-dir="0,-1">▲</button><button class="left" data-dir="-1,0">◀</button><button class="center" id="interact">話す</button><button class="right" data-dir="1,0">▶</button><button class="down" data-dir="0,1">▼</button></div><div id="actions"><button id="act">✨ 調べる</button><button id="quest">📜 目的</button><button id="guideButton" type="button">🧭 道案内 ON</button><button id="bag">🎒 記録</button><button id="sound">🔊 音 ON</button></div></div></div><script>
+(()=>{'use strict';const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d'),T=32,W=26,H=19;let audio=null,sound=true,keys={},lastMove=0,frame=0,modal=false,particles=[],messageTimer=0;
+let visualX=null,visualY=null,cameraX=null,cameraY=null,walkTick=0;const store='last100_story_v2';let state={zone:0,x:3,y:15,steps:100,max:100,hp:30,shards:0,flags:{},inventory:[],level:1,energy:0,turn:0,win:false};try{const s=JSON.parse(localStorage.getItem(store));if(s&&Number.isInteger(s.x)&&s.zone<=2)state={...state,...s,flags:s.flags||{},inventory:s.inventory||[]}}catch(e){}const maps=[];function rng(x,y,n){let z=Math.sin(x*12.9898+y*78.233+n*37.72)*43758.5453;return z-Math.floor(z)}function makeMap(zone){let a=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>{if(x===0||y===0||x===W-1||y===H-1)return 2;let r=rng(x,y,zone);return zone===0?(r<.14?2:r<.22?3:0):(r<.19?2:r<.29?3:0)}));if(zone===0){for(let y=2;y<17;y++)for(let x=11;x<15;x++)a[y][x]=1;for(let x=2;x<24;x++)for(let y=13;y<16;y++)a[y][x]=1;for(let x=4;x<10;x++)for(let y=4;y<9;y++)a[y][x]=1;for(let x=17;x<23;x++)for(let y=5;y<10;y++)a[y][x]=1;}else{for(let x=2;x<24;x++)for(let y=8;y<12;y++)a[y][x]=1;for(let y=3;y<17;y++)for(let x=11;x<15;x++)a[y][x]=1;for(let x=3;x<8;x++)for(let y=3;y<7;y++)a[y][x]=1;for(let x=18;x<23;x++)for(let y=13;y<17;y++)a[y][x]=1;}return a}maps.push(makeMap(0),makeMap(1),makeMap(2));
+// 港町: 埠頭と広場をつなぐ歩ける道
+for(let y=2;y<17;y++)for(let x=2;x<24;x++){
+ if((y>=7&&y<=11)||(x>=10&&x<=15)||(x>=3&&x<=7&&y>=3&&y<=15)||(x>=19&&x<=23&&y>=3&&y<=15))maps[2][y][x]=1;
+}
+const objs=[[
+{x:3,y:14,id:'child',kind:'npc',icon:'🧒'}, {x:8,y:6,id:'flower',kind:'shard',icon:'✦'}, {x:20,y:7,id:'letter',kind:'npc',icon:'✉'}, {x:19,y:14,id:'well',kind:'shard',icon:'✦'}, {x:13,y:3,id:'tower',kind:'boss',icon:'♜'}, {x:23,y:14,id:'gate',kind:'gate',icon:'➜'}, {x:6,y:12,id:'chest',kind:'chest',icon:'▣'}, {x:5,y:5,id:'baker',kind:'npc',icon:'♡'}, {x:21,y:5,id:'clock',kind:'npc',icon:'◷'}, {x:5,y:10,id:'pond',kind:'npc',icon:'♫'}, {x:12,y:10,id:'luna',kind:'npc',icon:'☽'}
+],[{x:5,y:5,id:'star',kind:'shard',icon:'✦'},{x:20,y:15,id:'tree',kind:'shard',icon:'✦'},{x:13,y:4,id:'guardian',kind:'boss',icon:'♛'},{x:21,y:9,id:'lost',kind:'npc',icon:'♧'},{x:4,y:9,id:'memory',kind:'npc',icon:'✉'},{x:12,y:15,id:'altar',kind:'gate',icon:'◈'},{x:6,y:15,id:'fox',kind:'npc',icon:'♡'},{x:19,y:4,id:'astral',kind:'npc',icon:'☆'},{x:17,y:10,id:'bridge',kind:'npc',icon:'♬'}],[
+{x:4,y:9,id:'harbor_child',kind:'npc',icon:'♡'},
+{x:6,y:4,id:'harbor_bottle',kind:'shard',icon:'✦'},
+{x:20,y:4,id:'harbor_lighthouse',kind:'shard',icon:'✦'},
+{x:11,y:14,id:'harbor_sailor',kind:'npc',icon:'⚓'},
+{x:19,y:14,id:'harbor_singer',kind:'npc',icon:'♫'},
+{x:12,y:8,id:'harbor_merchant',kind:'npc',icon:'◈'},
+{x:13,y:3,id:'harbor_boss',kind:'boss',icon:'♛'},
+{x:22,y:10,id:'harbor_gate',kind:'gate',icon:'➜'}]];function persist(){try{localStorage.setItem(store,JSON.stringify(state))}catch(e){}}function beep(freq=440,dur=.1,type='sine',vol=.08){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur)}catch(e){}}function fanfare(){[523,659,784,1047].forEach((n,i)=>setTimeout(()=>beep(n,.22,'triangle'),i*150))}function toast(t){$('toast').textContent=t;$('toast').classList.add('on');clearTimeout(messageTimer);messageTimer=setTimeout(()=>$('toast').classList.remove('on'),2300)}function update(){$('step').textContent=state.steps+' / '+state.max;$('hp').textContent=state.hp;$('shards').textContent=state.shards;$('chapter').textContent=['第1章 鐘の鳴らない村','第2章 星の眠る森','第3章 涙を忘れた港町'][state.zone];$('step').style.color=state.steps<=20?'#ff778a':'#ffdb86';persist()}function dialog(title,body,buttons=[['つづける',()=>close()]]){modal=true;$('modal').classList.add('on');const p=$('panel');p.innerHTML='';const h=document.createElement('h2');h.textContent=title;p.append(h);
+const speaker=/ルナ|星の約束/.test(title)?'luna':/トキ|時の欠片/.test(title)?'toki':/アオ|第[123]章/.test(title)?'ao':null;
+if(speaker){const portrait=document.createElement('div');portrait.className='story-portrait '+speaker;portrait.setAttribute('aria-hidden','true');portrait.innerHTML='<div class=portrait-head><i></i><b></b><em></em></div><div class=portrait-body></div>';p.append(portrait)}const b=document.createElement('div');b.innerHTML=body;p.append(b);buttons.forEach(([label,fn])=>{let bt=document.createElement('button');bt.textContent=label;bt.onclick=fn;p.append(bt)})}function close(){modal=false;$('modal').classList.remove('on')}function addStep(n){state.steps=Math.min(state.max,state.steps+n);update();if(n>0){beep(780,.15,'triangle');toast('時が '+n+' 歩ぶん戻った！')}}function fail(why){beep(160,.4,'sawtooth');dialog('⏳ 世界が止まった',`<p>${why}</p><p>それでも、冒険は終わらない。</p><p class="muted">村の入口から再挑戦できます。</p>`,[['もう一度歩く',()=>{state={zone:0,x:3,y:15,steps:100,max:100,hp:30,shards:0,flags:{},inventory:[],level:1,energy:0,turn:0,win:false};visualX=null;visualY=null;cameraX=null;cameraY=null;guideCacheKey='';close();update()}]])}
+let guideOn=true;let guideCacheKey="",guideCache=null;
+function objective(){
+ const all=objs[state.zone],open=all.filter(o=>!state.flags[o.id]);
+ const shards=open.filter(o=>o.kind==='shard');
+ if(shards.length)return shards;
+ const boss=open.filter(o=>o.kind==='boss');
+ if(boss.length)return boss;
+ const gates=open.filter(o=>o.kind==='gate');
+ if(gates.length)return gates;
+ return open.filter(o=>o.kind==='npc');
+}
+function pathTo(target){
+ const m=maps[state.zone],start=state.y*W+state.x,queue=[start],prev=new Int32Array(W*H).fill(-1);
+ prev[start]=start;let found=-1;
+ for(let k=0;k<queue.length;k++){
+  const v=queue[k],x=v%W,y=Math.floor(v/W);
+  if(Math.abs(x-target.x)+Math.abs(y-target.y)<=1){found=v;break}
+  for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){
+   const nx=x+dx,ny=y+dy;
+   if(nx<1||ny<1||nx>=W-1||ny>=H-1||m[ny][nx]===2)continue;
+   const n=ny*W+nx;if(prev[n]!==-1)continue;prev[n]=v;queue.push(n)
+  }
+ }
+ if(found===-1)return null;
+ const path=[];let p=found;
+ while(p!==start&&path.length<500){path.push({x:p%W,y:Math.floor(p/W)});p=prev[p]}
+ path.reverse();return path
+}
+function guide(){
+ if(!guideOn||modal||state.win)return;
+ const choices=objective();
+ const key=[state.zone,state.x,state.y,...choices.map(o=>o.id)].join('|');
+ if(key!==guideCacheKey){
+  guideCacheKey=key;guideCache=null;
+  for(const o of choices){const path=pathTo(o);if(path&&(!guideCache||path.length<guideCache.path.length))guideCache={o,path}}
+ }
+ if(!guideCache)return;
+ const {o,path}=guideCache,t=performance.now();
+ ctx.save();
+ for(let i=0;i<Math.min(path.length,9);i++){
+  const p=path[i],pulse=.55+.22*Math.sin(t/250-i*.7);
+  ctx.globalAlpha=pulse*(1-i*.065);
+  ctx.fillStyle=i===0?'#fff0ad':'#95e7ff';
+  ctx.beginPath();ctx.arc(p.x*T+16,p.y*T+16,3.5,0,Math.PI*2);ctx.fill()
+ }
+ ctx.globalAlpha=.8+.2*Math.sin(t/280);
+ ctx.strokeStyle='#fff1b0';ctx.lineWidth=2;
+ const xx=o.x*T+16,yy=o.y*T-8;
+ ctx.beginPath();ctx.moveTo(xx-7,yy-7);ctx.lineTo(xx,yy);ctx.lineTo(xx+7,yy-7);ctx.stroke();
+ ctx.restore();
+}
+window.last100ToggleGuide=function toggleGuide(){
+ guideOn=!guideOn;
+ document.getElementById('guideButton').textContent=guideOn?'🧭 道案内 ON':'🧭 道案内 OFF';
+ toast(guideOn?'目的地への道を表示するよ':'道案内をオフにしたよ')
+}
+function move(dx,dy){if(modal||state.win)return;let x=state.x+dx,y=state.y+dy;if(x<1||x>=W-1||y<1||y>=H-1||maps[state.zone][y][x]===2){beep(180,.04);return}if(state.steps<=0){fail('最後の一歩を使い切った。');return}state.x=x;state.y=y;state.steps--;walkTick++;beep(220+Math.random()*30,.035,'triangle',.025);if(state.steps===0){update();fail('100歩目を踏み、空の時計が砕けた。');return}const near=objs[state.zone].find(o=>!state.flags[o.id]&&Math.abs(o.x-x)+Math.abs(o.y-y)<=1);if(near)toast('✨ '+(near.kind==='boss'?'強い気配がする…':'近くに何かある。「調べる」！'));if(state.steps===20)toast('残り20歩。世界の色が薄れていく…');update()}function interact(){if(modal)return;let near=objs[state.zone].filter(o=>Math.abs(o.x-state.x)+Math.abs(o.y-state.y)<=1).sort((a,b)=>(state.flags[a.id]?1:0)-(state.flags[b.id]?1:0))[0];if(!near){dialog('トキ「耳をすまして」','<p>風が止まっている。でも、遠くの鐘が君を呼んでいる気がする。</p>');return}event(near)}function collect(o,desc,n=12){if(state.flags[o.id]){dialog('静かな場所','<p>ここでの出来事は、もう冒険の記憶になっている。</p>');return}state.flags[o.id]=true;state.shards++;addStep(n);fanfare();dialog('💎 時の欠片を手に入れた！',`<p>${desc}</p><p class="gold">時の欠片 +1 / 歩数 +${n}</p>`,[['ありがとう',()=>{close();update()}]])}function event(o){const f=state.flags;if(state.zone===2){return harborEvent(o)}if(o.id==='child'){if(f.child)return dialog('村の子','<p>「ありがとう！　ぼく、もう怖くないよ！」</p>');dialog('🧒 動けない子ども','<p>石段の向こうで、子どもの靴が壊れた時計に挟まっている。</p><p>「お母さんに会いたい……」</p>',[['靴を外して助ける',()=>{f.child=true;addStep(8);dialog('小さな約束','<p>「ありがとう！　今度はぼくが誰かを助ける！」</p><p>その言葉で、止まった風が少しだけ動いた。</p>',[['進む',close]])}],['今は先へ進む',close]])}
+else if(o.id==='baker'){if(f.baker)return dialog('パン屋のミナ','<p>「また朝が来たら、焼きたてのパンをあげるね！」</p>');dialog('🥖 眠ったパン屋','<p>パン屋の少女ミナは、焼き上がるはずのパンを見つめたまま動かない。</p><p>机には「お父さんの誕生日。今日は絶対に帰ってきて」と書かれたメモ。</p>',[['火をともす',()=>{f.baker=true;state.inventory.push('あたたかなパン');addStep(9);dialog('焼きたての約束','<p>小さな窯に火が戻った。甘い香りに、トキがくしゃみをする。</p><p>「世界が動いたら、一番にお父さんに食べてもらうんだ！」</p><p class="gold">あたたかなパン入手・9歩回復</p>')}],['あとで',close]])}
+else if(o.id==='clock'){if(f.clock)return dialog('止まった時計','<p>針は少しだけ動いている。誰かの願いが届いた証だ。</p>');dialog('🕰️ 時計職人の忘れ物','<p>時計の裏に小さな文字。「たとえ止まっても、約束はなくならない」</p><p>壊れたゼンマイを修理するには、時の力を少し分ける必要がある。</p>',[['5歩を渡して直す',()=>{if(state.steps<=5)return dialog('歩数が足りない','<p>もう少し時を集めてから戻ろう。</p>');state.steps-=5;f.clock=true;state.inventory.push('銀のゼンマイ');dialog('時計の贈り物','<p>針が一周して、古い鐘の音が聞こえた。</p><p>時計の中から銀のゼンマイが現れた。森で何かに使えるかもしれない。</p><p class="gold">5歩消費・銀のゼンマイ入手</p>');update()}],['やめる',close]])}
+else if(o.id==='pond'){if(f.pond)return dialog('歌う水面','<p>「♪ あしたが来たら、また会おう」</p>');dialog('🎶 水面の子守歌','<p>凍った池の下から、誰かの歌声が聞こえる。</p><p>トキ「これは……誰かが、明日も生きてほしいって願った歌だ」</p>',[['最後まで聴く',()=>{f.pond=true;addStep(6);dialog('歌の記憶','<p>音が消えると、水面に星がひとつ浮かんだ。</p><p>アオは、誰かに手を引かれて歩いた日のことを少しだけ思い出す。</p><p class="gold">6歩回復・思い出を記録</p>')}],['立ち去る',close]])}
+else if(o.id==='flower')collect(o,'花畑の時間が再び流れ、金色の花びらが空へ舞い上がった。');else if(o.id==='well')collect(o,'古井戸に落ちた星の光をすくい上げた。水面に、知らない自分の笑顔が映る。');else if(o.id==='letter'){if(f.letter)return dialog('古い手紙','<p>「明日も、あなたと歩けますように」</p>');dialog('✉ 届かなかった手紙','<p>封筒には「未来のアオへ」と書かれていた。</p><p>「大切なものを守るとき、遠回りを恐れないで。」</p>',[['手紙を持っていく',()=>{f.letter=true;state.inventory.push('未来からの手紙');addStep(5);close()}]])}
+else if(o.id==='luna'){if(f.luna)return dialog('ルナ','<p>「星はね、暗い場所ほど綺麗に見えるんだよ。」</p>');dialog('☽ 未来を知る少女','<p>ルナ「初めまして……って言うの、何回目かな。」</p><p>アオ「会ったことがあるの？」</p><p>ルナ「いつか、思い出すよ。」</p>',[['一緒に鐘を鳴らそう',()=>{f.luna=true;state.inventory.push('ルナの星飾り');addStep(7);close()}]])}
+else if(o.id==='chest'){if(f.chest)return dialog('空の宝箱','<p>中はもう空っぽだ。</p>');f.chest=true;state.inventory.push('回復薬');dialog('🎁 古い宝箱','<p>回復薬を手に入れた！　戦闘中にHPを10回復できる。</p>')}
+else if(o.id==='tower'){if(f.tower){dialog('🔔 動き始めた時計塔','<p>鐘の音が、村を優しく包んでいる。</p>');return}if(state.shards<2){dialog('🔒 時計塔の扉','<p>時の欠片が2つ必要だ。花畑と古井戸を探そう。</p>');return}battle('鐘守ゴーレム',36,'🛡️',()=>{f.tower=true;state.shards++;state.max=120;state.steps=Math.min(state.max,state.steps+55);fanfare();dialog('🔔 第1章クリア！','<p>止まった鐘が鳴り、村の人々が動き始めた。</p><p>ルナ「ありがとう。あなたは……また、私を救ってくれたんだね。」</p><p>トキ「次の鐘は、星の森にあるよ！」</p><p class="gold">歩数上限が120になった！</p>',[['第2章へ向かう',()=>{close();state.zone=1;state.x=3;state.y=10;state.shards=0;visualX=null;visualY=null;cameraX=null;cameraY=null;update();toast('第2章 星の眠る森')}]])})}
+else if(o.id==='gate'){if(state.zone===0){if(!f.tower)return dialog('森へ続く門','<p>村の鐘を鳴らしてから向かおう。</p>');state.zone=1;state.x=3;state.y=10;state.shards=0;visualX=null;visualY=null;cameraX=null;cameraY=null;update();dialog('🌲 第2章 星の眠る森','<p>木々の枝には、星が果実のように実っていた。</p><p>ルナ「この森で星を摘むと、誰かの未来が一つ消えるの。」</p>')}else{if(!f.guardian)return dialog('星の祭壇','<p>森の番人を鎮める必要がある。</p>');finale()}}
+else if(o.id==='star')collect(o,'落ちた星の実から、まだ見ぬ誰かの笑い声が聞こえた。',15);else if(o.id==='tree')collect(o,'古い大樹が目を開き、「未来を恐れないで」と語りかけた。',15);else if(o.id==='lost'){if(f.lost)return dialog('迷子の少年','<p>「もう迷わないよ！」</p>');dialog('🌟 迷子の少年','<p>少年「星を追っていたら、帰る道がなくなっちゃった。」</p><p>近くの道しるべを教えてあげよう。</p>',[['帰り道を教える',()=>{f.lost=true;addStep(12);dialog('小さな勇気','<p>「お兄ちゃん、ありがとう！」</p><p>助けた少年の手から、光がこぼれた。</p>')}],['先へ進む',close]])}
+else if(o.id==='fox'){if(f.fox)return dialog('星狐のコハク','<p>「きゅう！」小さな狐がうれしそうに尻尾を振った。</p>');dialog('🦊 星をなくした狐','<p>銀色の狐が、光を失った尻尾を抱えて震えている。</p><p>ルナ「この子の星を探してあげられる？」</p>',[['星を分ける（8歩消費）',()=>{if(state.steps<=8)return dialog('足りない時間','<p>今は歩数が足りない。ほかの願いを叶えてから来よう。</p>');state.steps-=8;f.fox=true;state.inventory.push('星狐の鈴');update();dialog('小さな星の誕生','<p>狐の尻尾に星明かりが戻った。狐はアオの周りを三周して、鈴を残して走り去る。</p><p>トキ「君が使った8歩は、きっと無駄じゃないよ」</p><p class="gold">星狐の鈴入手</p>')}],['また来る',close]])}
+else if(o.id==='astral'){if(f.astral)return dialog('天文台','<p>星図には、まだ見ぬ港町の姿が描かれている。</p>');dialog('🌌 星読みの碑文','<p>石碑には「未来は一つではない」と刻まれている。</p><p>古い星図を読み解くと、旅の先にある港町の灯台が映った。</p>',[['星図を写す',()=>{f.astral=true;state.inventory.push('星の地図');addStep(8);dialog('まだ見ぬ海','<p>潮風の匂いがした気がした。</p><p>ルナ「そこに行ったら……私の秘密を、きっと話すね」</p>')}],['離れる',close]])}
+else if(o.id==='bridge'){if(f.bridge)return dialog('古い橋','<p>星明かりが水面を渡っている。</p>');dialog('🌉 渡れない約束','<p>壊れた橋の向こうに、星の灯りが揺れている。</p><p>村で拾った銀のゼンマイがあれば、橋の仕掛けを動かせそうだ。</p>',[['橋を修理する',()=>{if(!state.inventory.includes('銀のゼンマイ')&&state.steps<=10)return dialog('部品が足りない','<p>銀のゼンマイがあれば修理できる。なければ11歩以上残してから再挑戦しよう。</p>');if(!state.inventory.includes('銀のゼンマイ'))state.steps-=10;f.bridge=true;addStep(16);dialog('つながった道','<p>歯車が回り、橋が静かに持ち上がった。</p><p>遠い場所で助けた誰かの願いが、今ここで道になった。</p><p class="gold">16歩回復</p>')}],['立ち去る',close]])}
+else if(o.id==='memory'){if(f.memory)return dialog('星の手紙','<p>ルナの名前が書かれた手紙。いつか真実が明かされる。</p>');f.memory=true;state.inventory.push('星の手紙');dialog('✉ 星の手紙','<p>「何度世界が終わっても、あなたともう一度出会いたい。」</p><p>差出人の名前は、かすれて読めなかった。</p>')}
+else if(o.id==='guardian'){if(f.guardian)return dialog('静かな森','<p>番人は星の光に包まれ、眠っている。</p>');if(state.shards<2)return dialog('🌙 森の封印','<p>星の欠片が2つ必要だ。</p>');battle('星喰いの番人',48,'🌘',()=>{f.guardian=true;addStep(25);dialog('🌠 星が降る夜','<p>番人が眠り、森に星の雨が降った。</p><p>ルナ「アオ、私たちはきっと、何度でも会える。」</p><p>森の祭壇が光り始めた。</p>')})}}
+function battle(name,maxHp,emoji,onWin){
+let hp=maxHp,turn=0,energy=0,phase=0;
+const escape=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const chapter=state.zone;
+function screen(note=''){
+ if(hp<=0){close();fanfare();onWin();update();return}
+ phase=hp<=maxHp*.5?1:0;
+ const heavy=turn%3===2;
+ const attack=heavy?(phase?15:12):(phase?7:5);
+ const ePct=Math.max(0,Math.round(hp/maxHp*100));
+ const pPct=Math.max(0,Math.round(state.hp/30*100));
+ const scene=chapter===0?'#283a54':chapter===1?'#1e2d55':'#103f57';
+ const enemy=chapter===2?`<svg viewBox="0 0 160 120" width="175" height="135"><path d="M15 80 Q30 10 75 40 Q110 -10 145 70 Q130 115 80 95 Q35 120 15 80" fill="#328eae" stroke="#9de1e3" stroke-width="5"/><path d="M48 65 Q80 40 112 65" fill="none" stroke="#c8ecff" stroke-width="8"/><circle cx="58" cy="74" r="6" fill="#0d344a"/><circle cx="101" cy="74" r="6" fill="#0d344a"/><path d="M78 82Q80 104 93 82" fill="none" stroke="#0d344a" stroke-width="4"/></svg>`:chapter===0?`
+ <svg viewBox="0 0 160 120" width="175" height="135" style="image-rendering:pixelated;filter:drop-shadow(0 8px 8px #0009)">
+ <rect x="60" y="17" width="40" height="15" fill="#b9a27c"/><rect x="53" y="32" width="54" height="58" fill="#6c758b"/>
+ <rect x="47" y="38" width="13" height="45" fill="#a7b0b9"/><rect x="100" y="38" width="13" height="45" fill="#a7b0b9"/>
+ <rect x="63" y="44" width="34" height="31" fill="#d8b47c"/><circle cx="80" cy="59" r="12" fill="#586b85"/><path d="M80 50V60L88 65" fill="none" stroke="#ffe3a0" stroke-width="3"/>
+ <rect x="63" y="82" width="14" height="24" fill="#7b8296"/><rect x="83" y="82" width="14" height="24" fill="#7b8296"/>
+ <rect x="66" y="21" width="8" height="5" fill="#ff777c"/><rect x="87" y="21" width="8" height="5" fill="#ff777c"/>
+ </svg>`:`
+ <svg viewBox="0 0 160 120" width="175" height="135" style="filter:drop-shadow(0 8px 10px #0009)">
+ <path d="M80 6L96 34 125 24 114 58 136 78 102 83 80 112 58 83 24 78 46 58 35 24 64 34Z" fill="#5263a1" stroke="#c1b2fa" stroke-width="4"/>
+ <path d="M80 28a32 32 0 1 0 0 64 26 26 0 1 1 0-64" fill="#b8d8f9"/>
+ <circle cx="65" cy="59" r="5" fill="#f8c9f6"/><circle cx="96" cy="59" r="5" fill="#f8c9f6"/>
+ <circle cx="80" cy="14" r="4" fill="#fff4ae"/>
+ </svg>`;
+ const body=`<div style="background:linear-gradient(${scene},#111b31);border:2px solid #bda26b;border-radius:12px;padding:10px;margin:8px 0;text-align:center">
+ <div style="color:#f8e5ad;font-weight:bold">${escape(name)} ${phase?'⚡ 第二形態':''}</div>
+ <div style="height:145px;display:grid;place-items:center;animation:enemyFloat 1.8s ease-in-out infinite">${enemy}</div>
+ <div style="height:10px;background:#20283b;border:1px solid #e5c487;border-radius:8px;overflow:hidden"><div style="height:100%;width:${ePct}%;background:linear-gradient(90deg,#e15c76,#ffb271);transition:width .3s"></div></div>
+ <div style="color:#fff4d7;font-size:12px">敵 HP ${Math.max(0,hp)} / ${maxHp}</div></div>
+ <div class="stats">アオ HP ${state.hp} / 30 <span style="color:#9ef2cb">▰ ${pPct}%</span><br>時の力 ${'✦'.repeat(energy)}${'·'.repeat(3-energy)}<br><span class="gold">次の攻撃：${heavy?'💥 強攻撃':'⚔️ 通常攻撃'}（${attack}ダメージ）</span></div>
+ <p style="font-weight:bold">${escape(note||'敵の攻撃予告を見て行動を選ぼう！')}</p>`;
+ dialog('⚔️ ボス戦 — '+name,body,[
+ ['⚔️ 斬る（6）',()=>act('attack')],
+ ['🛡️ 守る（力+1）',()=>act('guard')],
+ ['✨ 時の一撃（16）',()=>act('skill')],
+ ['💊 回復薬（+10）',()=>act('heal')]
+ ]);
+}
+function act(type){
+ let note='',guard=false;
+ if(type==='attack'){hp-=6;note='アオの剣が光る！ 敵に6ダメージ！';beep(560,.11,'sawtooth')}
+ else if(type==='guard'){guard=true;energy=Math.min(3,energy+1);note='時の盾を展開！ 時の力が1増えた。';beep(360,.15)}
+ else if(type==='skill'){if(energy<2){screen('時の力が足りない！ 防御で貯めよう。');return}energy-=2;hp-=16;note='時の一撃！ 16ダメージ！';fanfare()}
+ else if(type==='heal'){let i=state.inventory.indexOf('回復薬');if(i<0){screen('回復薬を持っていない！');return}state.inventory.splice(i,1);state.hp=Math.min(30,state.hp+10);note='回復薬でHPを10回復！';beep(660,.2)}
+ if(hp<=0){screen(note);return}
+ let enraged=hp<=maxHp*.5,heavy=turn%3===2;
+ let dmg=heavy?(enraged?15:12):(enraged?7:5);
+ if(guard)dmg=Math.ceil(dmg/4);
+ state.hp-=dmg;turn++;
+ note+=' '+name+'の'+(heavy?'大技！':'攻撃！')+' '+dmg+'ダメージ。';
+ if(enraged&&phase===0){note+=' ⚡ 番人が第二形態に変化した！';beep(180,.4,'sawtooth')}
+ if(state.hp<=0){close();fail('番人の一撃で倒れた。');return}
+ update();screen(note)
+}
+screen('敵の予告を読んで、防御と必殺技を使い分けよう！')
+}
+function finale(){
+ dialog('🌅 第2章クリア — 星の約束','<p>夜空に数えきれない星が戻った。</p><p>ルナ「私ね、ずっとあなたを待っていたの。」</p><p>アオ「どうして？」</p><p>ルナ「世界が終わる前に、もう一度ありがとうって言いたかったから。」</p><p>遠くの空に第三の鐘が浮かぶ。その向こうから、潮風が吹いてきた。</p><h3 class="gold">第3章 涙を忘れた港町</h3>',[['港町へ出発する',()=>{close();state.zone=2;state.x=3;state.y=9;state.shards=0;state.max=150;state.steps=Math.min(150,state.steps+65);state.hp=30;visualX=null;visualY=null;cameraX=null;cameraY=null;update();dialog('🌊 第3章 涙を忘れた港町','<p>港町ミオナ。船は動かず、波だけが時を刻んでいる。</p><p>少年「お母さんがいなくなったんだ。でも僕、悲しくないんだよ。おかしいよね？」</p><p>トキ「この町は……涙を失ってしまったんだ。」</p><p class="gold">歩数上限が150になった！</p>')}],['少し休む',close]])
+}
+function harborEvent(o){const f=state.flags;
+ if(o.id==='harbor_child'){
+  if(f.harbor_child)return dialog('港の少年','<p>「悲しいって気持ちも、大事な宝物なんだね。」</p>');
+  dialog('🧒 泣けない少年','<p>少年「お母さんが海に行ったまま帰らない。でも、泣き方を忘れちゃった。」</p><p>アオ「一緒に思い出そう。お母さんのこと。」</p>',[['思い出を聞く',()=>{f.harbor_child=true;addStep(14);dialog('青い貝殻','<p>少年は母と拾った貝殻を差し出した。胸が痛むのは、愛していた証だった。</p><p class="gold">14歩回復</p>')}],['今は離れる',close]])
+ }else if(o.id==='harbor_bottle')collect(o,'漂着した瓶の中には、届かなかった「ただいま」の手紙。涙の雫が時の欠片へと変わった。',18);
+ else if(o.id==='harbor_lighthouse')collect(o,'灯台の光が海を照らした。帰れなかった船たちの名前が夜空に浮かぶ。',18);
+ else if(o.id==='harbor_sailor'){
+  if(f.harbor_sailor)return dialog('船乗りのギア','<p>「壊れたものも、直せる。忘れたものも、取り戻せるさ。」</p>');
+  dialog('⚓ 止まった船乗り','<p>機械の腕を持つ船乗りギアが、動かない船の舵を握っている。</p><p>「この船には、帰りを待っている人がいるんだ。」</p>',[['船を直す（6歩）',()=>{if(state.steps<=6)return dialog('時間が足りない','<p>ほかの人を助けて歩数を増やそう。</p>');state.steps-=6;f.harbor_sailor=true;state.inventory.push('船乗りの羅針盤');addStep(20);dialog('羅針盤の約束','<p>ギア「これを持っていけ。迷った時、帰る場所を思い出させてくれる。」</p><p class="gold">羅針盤入手・20歩回復</p>')}],['あとで',close]])
+ }else if(o.id==='harbor_singer'){
+  if(f.harbor_singer)return dialog('歌姫セラ','<p>「悲しい歌も、誰かを救えるのね。」</p>');
+  dialog('🎶 声を失った歌姫','<p>歌姫セラは、涙を忘れた町で歌う意味を失っていた。</p><p>「笑顔しかない町で、悲しい歌なんていらないでしょう？」</p>',[['悲しい歌も聴きたい',()=>{f.harbor_singer=true;addStep(12);dialog('涙の旋律','<p>セラの声が港に響く。悲しみを思い出した人々が、静かに空を見上げた。</p><p class="gold">12歩回復</p>')}],['また来る',close]])
+ }else if(o.id==='harbor_merchant'){
+  if(f.harbor_merchant)return dialog('港の商人','<p>「旅人さん、気をつけてな！」</p>');
+  dialog('🧰 港の商人','<p>「嵐に備えて、これを持っていきな。代金は要らないよ。」</p>',[['受け取る',()=>{f.harbor_merchant=true;state.inventory.push('回復薬');state.inventory.push('回復薬');dialog('旅の支度','<p>回復薬を2個手に入れた！ ボス戦で使おう。</p>');update()}]])
+ }else if(o.id==='harbor_boss'){
+  if(f.harbor_boss)return dialog('静かな海','<p>潮風が吹き、港の人々の目に涙が戻っていた。</p>');
+  if(state.shards<2)return dialog('🌊 忘却の灯台','<p>港に散らばる時の欠片が2つ必要だ。漂着瓶と北東の灯台を探そう。</p>');
+  battle('涙を喰らう海魔',62,'🌊',()=>{f.harbor_boss=true;addStep(35);dialog('🌧️ 初めての雨','<p>海魔が消えると、町に雨が降り始めた。</p><p>少年の頬を、ひとしずくの涙が流れた。</p><p>「お母さんに……会いたい。」</p><p>ルナ「泣けるって、きっと前へ進めるってことなんだよ。」</p><p>東の桟橋に新しい道が現れた。</p>')})
+ }else if(o.id==='harbor_gate'){
+  if(!f.harbor_boss)return dialog('東の桟橋','<p>海魔を倒すまで、霧が行く手をふさいでいる。</p>');
+  state.win=true;update();fanfare();dialog('🌅 第3章クリア — 涙の向こうへ','<p>少年は泣きながら、初めて笑った。</p><p>ギア「俺も一緒に行こう。海の向こうに、時間を止めた奴がいる。」</p><p>ルナは小さくうなずいた。その瞳には、誰にも言えない未来が映っていた。</p><h3 class="gold">つづく — 第4章 砂時計の王国</h3>',[['冒険の記録',journal],['最初から遊ぶ',()=>{localStorage.removeItem(store);location.reload()}]])
+ }
+}
+window.last100World=()=>({zone:state.zone,x:state.x,y:state.y,steps:state.steps,map:maps[state.zone],objects:objs[state.zone].map(o=>({x:o.x,y:o.y,done:!!state.flags[o.id],kind:o.kind}))});function exportSave(){persist();const raw=localStorage.getItem(store)||JSON.stringify(state);dialog('📋 セーブデータ',`<p>以下の文字列をコピーして安全な場所に保管してね。</p><textarea id="saveText" readonly style="width:100%;height:115px;background:#0d1930;color:#fff4da;border:1px solid #c6a86e;border-radius:8px">${btoa(unescape(encodeURIComponent(raw)))}</textarea>`,[['コピー',async()=>{let v=$('saveText').value;try{await navigator.clipboard.writeText(v);toast('コピーしたよ！')}catch(e){$('saveText').select();toast('文字列を長押ししてコピーしてね')}}],['閉じる',journal]])}
+function importSave(){dialog('📥 セーブデータを復元','<p>コピーしたセーブ文字列を貼り付けてね。現在の進行状況は上書きされるよ。</p><textarea id="importText" style="width:100%;height:115px;background:#0d1930;color:#fff4da;border:1px solid #c6a86e;border-radius:8px"></textarea>',[['復元する',()=>{try{const raw=decodeURIComponent(escape(atob($('importText').value.trim())));const obj=JSON.parse(raw);if(!Number.isInteger(obj.zone)||obj.zone<0||obj.zone>2||!Number.isInteger(obj.x)||!Number.isInteger(obj.y)||obj.x<1||obj.x>=W-1||obj.y<1||obj.y>=H-1||!Number.isFinite(obj.steps)||obj.steps<0||obj.steps>500||!Number.isFinite(obj.hp)||obj.hp<0||obj.hp>30||!obj.flags||typeof obj.flags!=='object'||Array.isArray(obj.flags)||!Array.isArray(obj.inventory)||!Number.isFinite(obj.max)||obj.max<1||obj.max>500||!Number.isFinite(obj.shards)||obj.shards<0||obj.shards>200||maps[obj.zone][obj.y][obj.x]===2)throw Error('bad save');localStorage.setItem(store,raw);location.reload()}catch(e){toast('セーブ文字列が正しくないみたい')}}],['戻る',journal]])}
+function journal(){dialog('📖 冒険の記録',`<p>第${state.zone+1}章　残り${state.steps}歩　HP ${state.hp}/30</p><p>達成イベント ${Object.values(state.flags).filter(Boolean).length}件</p><p>持ち物：${state.inventory.join('、')||'なし'}</p><p class="muted">進行状況はこのブラウザに自動保存されます。ブラウザのデータを消すとセーブも消えます。</p>`,[['閉じる',close],['📋 セーブをコピー',exportSave],['📥 セーブを復元',importSave],['セーブを最初からやり直す',()=>dialog('確認','<p>冒険の記録を消して最初から始めますか？</p>',[['消して再開',()=>{localStorage.removeItem(store);location.reload()}],['やめる',journal]])]])}
+function quest(){dialog('📜 冒険の目的',state.zone===0?'<p>【第1章】花畑と古井戸で時の欠片を2つ集め、北の時計塔の番人を倒そう。</p><p>村人を助けると歩数が戻る。パン屋・池・時計職人の寄り道も探してみよう。</p><p>時計塔を鳴らせば次の章へ進める。</p>':state.zone===1?'<p>【第2章】星の実と大樹の時の欠片を集め、森の北にいる番人を倒そう。</p><p>星狐・星読みの碑文・壊れた橋にも物語がある。</p><p>南の星の祭壇を調べると章が終わる。</p>':'<p>【第3章】漂着瓶と北東の灯台で時の欠片を2つ集め、北の海魔を倒そう。</p><p>少年、船乗り、歌姫、商人を助けると歩数や回復薬が手に入る。</p><p>最後に東の桟橋へ向かおう。</p>')}
+const palette={grass:['#3d8059','#4b9464','#35734e'],road:['#bda577','#c9b58a','#aa946e'],tree:['#1e5d47','#287352','#357e58'],flower:['#6fa66b','#79b777','#6c9e5e']};function tile(x,y,v){let sx=x*T,sy=y*T;ctx.fillStyle=state.zone===1?
+({grass:['#375f69','#40737b','#315967'],road:['#807fa5','#9897b9','#6c7099'],tree:['#173d52','#24566c','#31697c'],flower:['#587c91','#668ca3','#50758b']}[v===1?'road':v===2?'tree':v===3?'flower':'grass'][Math.floor(rng(x,y,9)*3)]):
+(state.zone===2?{grass:['#397b98','#32708a','#3e829b'],road:['#c9b58d','#d8c49b','#bda67c'],tree:['#1d526e','#24647d','#2e7188'],flower:['#72a9ad','#91c4bf','#6c9fa7']}[v===1?'road':v===2?'tree':v===3?'flower':'grass'][Math.floor(rng(x,y,9)*3)]:palette[v===1?'road':v===2?'tree':v===3?'flower':'grass'][Math.floor(rng(x,y,9)*3)]);ctx.fillRect(sx,sy,T,T);if(v===1){ctx.fillStyle='#9a8866';ctx.fillRect(sx+4,sy+4,11,2);ctx.fillRect(sx+17,sy+18,10,2);ctx.fillRect(sx+13,sy+28,2,3);ctx.fillStyle='#e2cba0';ctx.fillRect(sx+3,sy+8,7,2);ctx.fillRect(sx+20,sy+5,6,2);ctx.fillStyle='#796e59';ctx.fillRect(sx+12,sy+14,4,2)}else if(v===2){ctx.fillStyle=state.zone?'#202f52':'#173d34';ctx.fillRect(sx+12,sy+20,8,12);ctx.fillStyle=state.zone?'#385f86':'#286c4d';ctx.fillRect(sx+3,sy+6,26,20);ctx.fillStyle=state.zone?'#5775a5':'#3b9166';ctx.fillRect(sx+7,sy+2,19,13);ctx.fillStyle=state.zone?'#9ba6d6':'#66a978';ctx.fillRect(sx+10,sy+5,6,4);ctx.fillStyle=state.zone?'#d4d5ff':'#8ac79b';ctx.fillRect(sx+15,sy+7,4,3);ctx.fillStyle='#184d3a';ctx.fillRect(sx+5,sy+22,5,3)}else{ctx.fillStyle=state.zone?'#8bacc1':'#80b77c';ctx.fillRect(sx+Math.floor(rng(x,y,3)*23),sy+7,3,4);if(v===3){ctx.fillStyle=['#ffd3a1','#ffe6f2','#ffe6a4'][Math.floor(rng(x,y,4)*3)];ctx.fillRect(sx+8,sy+10,4,4);ctx.fillRect(sx+23,sy+23,4,4);ctx.fillStyle='#fff7cb';ctx.fillRect(sx+9,sy+11,2,2);ctx.fillRect(sx+24,sy+24,2,2)}}}
+function scenery(x,y,v,t){
+ const sx=x*T,sy=y*T,z=state.zone,r=rng(x,y,17),r2=rng(x,y,18);
+ const block=(a,b,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(sx+a,sy+b,w,h)};
+ if(v===1){
+  if(z===0){block(0,0,32,1,'#e4d0a1');block(0,31,32,1,'#8b795f')}
+  if(z===1){if(r<.27){block(8,7,3,3,'#e1c4ff');block(19,21,2,3,'#91e6e9')}}
+  if(z===2){block(0,0,32,2,'#f4d9a4');if(r<.18){block(6,4,2,22,'#e5d4aa');block(20,4,2,22,'#e5d4aa')}}
+ }else if(v===2){
+  if(z===0){
+   block(4,14,24,8,'#276a45');block(8,3,16,7,'#72bd75');block(12,0,8,4,'#a6d28c');
+   block(6,12,4,4,'#a4d48d');block(22,8,4,4,'#a4d48d');
+   block(16,21,3,9,'#674e38');block(15,25,5,3,'#9b6c49');
+  }else if(z===1){
+   block(4,16,24,9,'#234a6a');block(7,7,18,13,'#5166a0');block(11,2,12,8,'#8a87d1');
+   block(13,5,4,4,'#d2b9ff');block(22,15,3,4,'#88d9f4');block(3,20,5,3,'#426b99');
+   if(r<.23){block(12,0,8,3,'#d2f4ff')}
+  }else{
+   block(5,17,22,7,'#18536a');block(7,8,18,13,'#2a8ba1');block(11,3,11,8,'#54b9c4');
+   block(13,6,3,4,'#9ee3dd');block(22,14,3,4,'#f0e0ac');block(15,22,3,7,'#6c5d52');
+  }
+ }else{
+  if(r<.27){block(4,20,2,5,z===1?'#a3c4e1':'#286e51');block(6,18,2,3,z===1?'#d9b8f7':'#8cbd77')}
+  if(r2<.18){block(23,8,2,3,z===0?'#fbe1a2':z===1?'#c6a9ff':'#b1eff5');block(22,10,4,2,z===0?'#fff5d1':'#d8f7fa')}
+  if(z===2&&r<.14){block(2,23,12,2,'#b6d8c9');block(7,18,2,9,'#b6d8c9')}
+ }
+}
+function landmark(lx,ly,t){
+ let x=lx*T,y=ly*T,z=state.zone;
+ const b=(a,c,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x+a,y+c,w,h)};
+ // Dark contact shadow and richly layered rooftops.
+ b(0,27,34,5,'#15263b77');b(4,12,26,19,z===0?'#d4b28c':z===1?'#8c84ac':'#c1a58d');
+ b(3,10,28,3,z===0?'#eee0b7':z===1?'#b7a5db':'#e6d7ae');
+ b(0,7,34,6,z===0?'#9f5c50':z===1?'#594f9a':'#607e98');
+ b(5,2,24,7,z===0?'#c37a5c':z===1?'#8173ba':'#8caab4');
+ b(9,0,16,4,z===0?'#dc9873':z===1?'#ab95df':'#c3b99e');
+ b(13,20,8,11,'#4a4053');b(15,22,4,7,'#d9bd7e');
+ b(6,16,6,7,'#f5df9e');b(7,17,4,5,'#6cb7d0');
+ b(23,16,6,7,'#f5df9e');b(24,17,4,5,'#6cb7d0');
+ b(2,11,30,2,'#fff1c344');
+ if(z===0){b(0,24,4,5,'#6d9a58');b(29,23,5,6,'#4f8852')}
+ if(z===1){b(2,5,3,3,'#c4d5ff');b(29,9,3,4,'#b0f5ed')}
+ if(z===2){b(0,19,4,11,'#506c81');b(30,19,4,11,'#506c81')}
+}
+function actor(x,y,skin,cloak,role='villager'){
+const pix=(dx,dy,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.round(x+dx),Math.round(y+dy),w,h)};
+const hero=role==='hero',luna=role==='luna',forest=state.zone===1;
+const hair=hero?'#263b61':luna?'#d6b4f2':'#76513f',coat=hero?'#4779c9':luna?'#9367c0':cloak;
+pix(-9,10,18,4,'#14253d66');
+pix(-7,9,5,7,'#293b66');pix(2,9,5,7,'#293b66');
+pix(-9,-5,18,16,coat);pix(-7,-3,14,11,hero?'#79b5e7':luna?'#c2a2ed':'#d6a47b');
+pix(-10,-2,4,11,hero?'#d9e5f8':coat);pix(6,-2,4,11,hero?'#d9e5f8':coat);
+pix(-7,-15,14,14,skin);pix(-9,-18,18,6,hair);pix(-9,-13,4,9,hair);pix(6,-13,3,8,hair);
+pix(-4,-8,3,3,'#182d49');pix(3,-8,3,3,'#182d49');
+pix(-3,-7,1,1,'#ffffff');pix(4,-7,1,1,'#ffffff');
+pix(-6,-4,3,2,'#e8a2a0');pix(4,-4,3,2,'#e8a2a0');
+if(hero){pix(-2,-20,10,3,'#344f82');pix(-11,1,4,9,'#e6c16e');pix(-12,9,6,3,'#fff0ad');pix(-2,1,4,5,'#d9e9ff')}
+if(luna){pix(-11,-16,3,14,'#caa3eb');pix(8,-16,3,14,'#caa3eb');pix(-2,-21,5,4,'#f9e3ac');pix(0,-22,1,2,'#ffffff')}
+if(forest&&hero){pix(7,-18,4,3,'#b3e6e5')}
+}
+function render(t){frame++;let dpr=Math.min(devicePixelRatio||1,2),rect=canvas.getBoundingClientRect(),cw=Math.max(1,Math.floor(rect.width*dpr)),ch=Math.max(1,Math.floor(rect.height*dpr));if(canvas.width!==cw||canvas.height!==ch){canvas.width=cw;canvas.height=ch}ctx.setTransform(cw/rect.width,0,0,ch/rect.height,0,0);ctx.imageSmoothingEnabled=false;let sc=Math.max(1.4,Math.min(rect.width/300,rect.height/230));ctx.save();ctx.scale(sc,sc);let vw=rect.width/sc,vh=rect.height/sc,cx=state.x*T+16,cy=state.y*T+16;
+visualX=visualX===null?cx:visualX+(cx-visualX)*.23;
+visualY=visualY===null?cy:visualY+(cy-visualY)*.23;
+cameraX=cameraX===null?visualX:cameraX+(visualX-cameraX)*.15;
+cameraY=cameraY===null?visualY:cameraY+(visualY-cameraY)*.15;
+ctx.translate(Math.floor(vw/2-cameraX),Math.floor(vh/2-cameraY));const m=maps[state.zone];const x0=Math.max(0,Math.floor((cameraX-vw/2)/T)-2),x1=Math.min(W-1,Math.ceil((cameraX+vw/2)/T)+2),y0=Math.max(0,Math.floor((cameraY-vh/2)/T)-2),y1=Math.min(H-1,Math.ceil((cameraY+vh/2)/T)+2);for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tile(x,y,m[y][x]);for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)scenery(x,y,m[y][x],t);for(let [lx,ly] of (state.zone===0?[[12,6],[13,6],[12,7],[13,7],[18,12]]:state.zone===1?[[9,6],[10,6],[16,13],[17,13]]:[[5,6],[6,6],[18,6],[19,6],[12,12]])){landmark(lx,ly,t)}for(let o of objs[state.zone]){let px=o.x*T+16,py=o.y*T+16;if(state.flags[o.id]&&o.kind==='shard')continue;ctx.fillStyle='#2d354d';ctx.fillRect(px-11,py+7,22,5);if(o.kind==='shard'){ctx.save();ctx.globalAlpha=.13+.08*Math.sin(t/400);ctx.fillStyle='#fff0ac';ctx.beginPath();ctx.arc(px,py,19+Math.sin(t/300)*3,0,Math.PI*2);ctx.fill();ctx.restore();ctx.fillStyle='#ffe39b';let bob=Math.sin(t/300+o.x)*3;ctx.beginPath();ctx.moveTo(px,py-14+bob);ctx.lineTo(px+9,py+bob);ctx.lineTo(px,py+13+bob);ctx.lineTo(px-9,py+bob);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(px-2,py-4+bob,4,4)}else if(o.kind==='boss'){ctx.fillStyle='#79666d';ctx.fillRect(px-14,py-20,28,29);ctx.fillStyle='#e5c481';ctx.fillRect(px-10,py-17,20,6);ctx.fillStyle='#fb6e6e';ctx.fillRect(px-8,py-5,5,4);ctx.fillRect(px+4,py-5,5,4)}else if(o.kind==='gate'){ctx.fillStyle='#d9b26e';ctx.fillRect(px-12,py-22,24,30);ctx.fillStyle='#445b82';ctx.fillRect(px-8,py-18,16,24)}else if(o.kind==='chest'){ctx.fillStyle='#ab6d3e';ctx.fillRect(px-11,py-5,22,15);ctx.fillStyle='#f5c568';ctx.fillRect(px-11,py-6,22,4)}else{actor(px,py,o.id==='luna'?'#ffe3cc':'#f1c7a2',o.id==='luna'?'#a37bc9':'#b77b4d',o.id==='luna'?'luna':'villager')}}guide();let bob=Math.sin(t/140)*1.2;actor(visualX,visualY-1+bob,'#f4d1ae','#3b64a6','hero');ctx.fillStyle='#ffe8aa';ctx.fillRect(visualX-6,visualY-13+bob,4,5);ctx.fillStyle='#e7fbff';let fx=visualX+20,fy=visualY-11+Math.sin(t/280)*5;ctx.fillRect(fx-6,fy-5,12,11);ctx.fillStyle='#67b5e4';ctx.fillRect(fx-3,fy-1,3,3);ctx.fillRect(fx+2,fy-1,3,3);ctx.restore();
+ctx.save();
+for(let i=0;i<18;i++){
+ const sx=(i*97+Math.sin(t/1500+i*4)*24+rect.width*3)%Math.max(1,rect.width);
+ const sy=(i*71-t*(.007+i%3*.004)+rect.height*20)%Math.max(1,rect.height);
+ ctx.globalAlpha=.16+.16*Math.sin(t/600+i);
+ ctx.fillStyle=state.zone===2?'#b6f1ff':state.zone?'#d9d1ff':'#fff2b5';
+ ctx.fillRect(sx,sy,i%4===0?3:2,i%4===0?3:2);
+}
+ctx.restore();
+if(state.steps<=20){ctx.fillStyle=`rgba(79,13,39,${.12+.06*Math.sin(t/260)})`;ctx.fillRect(0,0,rect.width,rect.height)}requestAnimationFrame(render)}requestAnimationFrame(render);
+for(let b of document.querySelectorAll('[data-dir]')){let [dx,dy]=b.dataset.dir.split(',').map(Number);b.addEventListener('pointerdown',e=>{e.preventDefault();move(dx,dy);let repeat=setInterval(()=>move(dx,dy),175);const stop=()=>{clearInterval(repeat);b.removeEventListener('pointerup',stop);b.removeEventListener('pointercancel',stop);b.removeEventListener('pointerleave',stop)};b.addEventListener('pointerup',stop);b.addEventListener('pointercancel',stop);b.addEventListener('pointerleave',stop)})}window.addEventListener('keydown',e=>{if(e.target?.matches?.('input,textarea,select,[contenteditable]'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.repeat)return;const d={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};if(d[e.key])move(...d[e.key]);if(e.key===' '||e.key==='Enter')interact()});$('act').onclick=interact;$('interact').onclick=interact;$('quest').onclick=quest;$('bag').onclick=journal;$('sound').onclick=()=>{sound=!sound;$('sound').textContent=sound?'🔊 音 ON':'🔇 音 OFF';if(sound)beep(600)};document.addEventListener('visibilitychange',()=>{if(document.hidden)persist()});update();if(!state.flags.intro){state.flags.intro=true;update();dialog('🌅 あと100歩の世界','<p>世界の時間が止まった。</p><p>ただ一人、アオだけが歩ける。</p><p>トキ「君が100歩歩いたら、世界は終わる。でも……誰かを助けると、時間を取り戻せるんだ！」</p><p><b>十字キーで移動、近くの人や光は「調べる」。</b></p><p>🧭 道案内ボタンで次の目的地までの光の道を切り替えられるよ。</p><p class="muted">第1章から第3章まで冒険できるよ。人々の願いを叶え、時を取り戻そう！</p>')}})();
+</script>
+<style>
+#mapPanel{position:absolute;right:10px;top:10px;z-index:3;background:#0d1b2dd9;border:1px solid #e6cb85a8;border-radius:10px;padding:7px;box-shadow:0 4px 18px #0007;pointer-events:none}
+#mapPanel canvas{width:104px;height:76px;display:block;image-rendering:pixelated}
+#mapPanel small{display:block;text-align:center;font-size:10px;color:#f5dfa4;margin-bottom:3px}
+#musicToggle{position:absolute;left:10px;top:10px;z-index:3;background:#172440e8;color:#fff3d1;border:1px solid #b58b56;border-radius:10px;padding:8px 9px;font-weight:700;font-size:11px}
+#chapterHint{position:absolute;left:10px;bottom:10px;right:10px;text-align:center;pointer-events:none;color:#fff5d5;text-shadow:1px 2px 3px #000,0 0 10px #000;font-size:12px;font-weight:800}
+</style>
+<script>
+(function(){
+ const world=document.getElementById('world');
+ if(!world)return;
+ const panel=document.createElement('div');panel.id='mapPanel';
+ panel.innerHTML='<small>地図 ◇目的地 ●アオ</small><canvas width="104" height="76"></canvas>';
+ world.appendChild(panel);
+ const hint=document.createElement('div');hint.id='chapterHint';
+ hint.textContent='十字キーで移動 • 光や人物のそばで「調べる」';
+ world.appendChild(hint);
+ const btn=document.createElement('button');btn.id='musicToggle';btn.textContent='♫ BGM ON';
+ world.appendChild(btn);
+ let playing=true,ac=null,osc=[],gain=null;
+ function stop(){osc.forEach(o=>{try{o.stop()}catch(e){}});osc=[];if(gain)gain.disconnect();gain=null;}
+ function start(){
+  if(!playing||document.hidden)return;
+  try{
+   ac=ac||new(window.AudioContext||window.webkitAudioContext)();
+   if(ac.state==='suspended')ac.resume();
+   stop();gain=ac.createGain();gain.gain.value=.018;gain.connect(ac.destination);
+   const notes=[196,246.94,293.66];
+   notes.forEach((hz,i)=>{let o=ac.createOscillator();o.type=i===0?'sine':'triangle';o.frequency.value=hz;
+    let g=ac.createGain();g.gain.value=i===0?.45:.13;o.connect(g);g.connect(gain);o.start();osc.push(o);});
+  }catch(e){}
+ }
+ btn.addEventListener('click',()=>{playing=!playing;btn.textContent=playing?'♫ BGM ON':'♫ BGM OFF';playing?start():stop()});
+ document.addEventListener('pointerdown',function once(){if(playing)start();document.removeEventListener('pointerdown',once)},{once:true});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else if(playing&&ac)start()});
+ document.getElementById('guideButton')?.addEventListener('click',()=>window.last100ToggleGuide?.());
+ const mini=panel.querySelector('canvas'),c=mini.getContext('2d');
+ const colors={'0':'#41845a','1':'#c4aa79','2':'#184937','3':'#82a96b'};
+ function draw(){
+  try{
+   const w=window.last100World?.();
+   if(!w)return;
+   c.fillStyle='#122536';c.fillRect(0,0,104,76);
+   const colors=['#41845a','#c4aa79','#184937','#82a96b'];
+   for(let yy=0;yy<19;yy++)for(let xx=0;xx<26;xx++){
+     const v=w.map[yy]?.[xx]??2;
+     c.fillStyle=w.zone===1?['#40737b','#9897b9','#24566c','#668ca3'][v]:w.zone===2?['#32708a','#d8c49b','#24647d','#91c4bf'][v]:colors[v];
+     c.fillRect(xx*4,yy*4,4,4);
+   }
+   for(const o of w.objects){
+     if(o.done)continue;
+     c.fillStyle=o.kind==='boss'?'#ff8b95':o.kind==='shard'?'#fff0a5':'#b2e6f9';
+     c.fillRect(o.x*4+1,o.y*4+1,3,3);
+   }
+   c.fillStyle='#ffffff';c.fillRect(w.x*4-1,w.y*4-1,6,6);
+   c.fillStyle='#263d67';c.fillRect(w.x*4+1,w.y*4+1,2,2);
+  }catch(e){}
+ }
+ draw();setInterval(draw,250);
+})();
+</script>
+</body></html>
