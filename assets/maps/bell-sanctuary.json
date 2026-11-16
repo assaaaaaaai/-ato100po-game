@@ -1,0 +1,49 @@
+{
+  "id": "bellSanctuary",
+  "name": "鐘守の祭壇",
+  "image": "assets/maps/bell-sanctuary.png",
+  "collision": "assets/maps/bell-sanctuary-collision.png",
+  "size": [
+    1536,
+    1024
+  ],
+  "tileSize": 32,
+  "villageNorthExit": {
+    "xRange": [
+      16,
+      20
+    ],
+    "yMax": 2
+  },
+  "spawn": [
+    24,
+    29
+  ],
+  "returnToVillage": [
+    18,
+    2
+  ],
+  "battleTrigger": {
+    "xRange": [
+      21,
+      27
+    ],
+    "yRange": [
+      10,
+      13
+    ]
+  },
+  "golem": [
+    24,
+    12
+  ],
+  "requiredShards": 3,
+  "defeatedFlag": "flags.boss",
+  "maskColors": {
+    "white": "walkable",
+    "black": "blocked",
+    "yellow": "transition",
+    "red": "battle"
+  },
+  "note": "Image-derived draft collision regions; refine against physical-device screenshots."
+}
